@@ -5,7 +5,7 @@
 	"author": "{{ remrg:var organization }}",
 	"license": "{{ remrg:var license }}",
 	"scripts": {
-		"build": "tsc -p tsconfig.json",
+		"build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
 		"dev": "tsc -p tsconfig.json --watch",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
 		"lint": "eslint . --fix && prettier --write .",
@@ -25,6 +25,7 @@
 		"eslint": "^10.1.0",
 		"prettier": "^3.8.1",
 		"prettier-plugin-brace-style": "^0.10.1",
+		"tsc-alias": "^1.9.2",
 		"typescript": "^5.9.3"
 	}
 }
