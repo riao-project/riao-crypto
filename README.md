@@ -1,11 +1,11 @@
-# {{ remrg:var project-name }}
+# riao-crypto
 
 {{ remrg:task Write a brief project description }}
 
 ## Installation
 
 ```bash
-npm install {{ remrg:var project-name }}
+npm install riao-crypto
 ```
 
 ## Quick Start
@@ -20,4 +20,4 @@ npm install {{ remrg:var project-name }}
 
 ## License
 
-Licensed under the [{{ remrg:var license }}](LICENSE.md).
+Licensed under the [MIT](LICENSE.md).
