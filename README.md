@@ -8,9 +8,9 @@
 npm install riao-crypto
 ```
 
-## Quick Start
+## Getting Started
 
-### Basic Usage
+Read the [Getting Started Guide](./docs/guides/getting-started.md) to get started.
 
 ## Contributing
 
