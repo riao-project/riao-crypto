@@ -21,21 +21,21 @@ Import the functions and classes you need:
 
 ```typescript
 import {
-  // Encryption
-  Encryptor,
-  Decryptor,
-  encrypt,
-  decrypt,
-  
-  // Hashing
-  hashPassword,
-  comparePassword,
-  
-  // JWT
-  Jwt,
-  
-  // Key Pair
-  generateKeyPair,
+	// Encryption
+	Encryptor,
+	Decryptor,
+	encrypt,
+	decrypt,
+
+	// Hashing
+	hashPassword,
+	comparePassword,
+
+	// JWT
+	Jwt,
+
+	// Key Pair
+	generateKeyPair,
 } from '@riao/crypto';
 ```
 
@@ -104,15 +104,12 @@ Create and verify JSON Web Tokens with automatic expiration handling.
 ```typescript
 import { Jwt } from '@riao/crypto';
 
-const jwt = new Jwt({ 
-  secret: 'your-secret-key',
+const jwt = new Jwt({
+	secret: 'your-secret-key',
 });
 
 // Sign a token
-const token = jwt.sign(
-  { userId: 123, username: 'john' },
-  { expiresIn: '1h' }
-);
+const token = jwt.sign({ userId: 123, username: 'john' }, { expiresIn: '1h' });
 
 // Verify a token
 const payload = jwt.verify(token);
@@ -127,8 +124,8 @@ import { Jwt, generateKeyPair } from '@riao/crypto';
 const { publicKey, privateKey } = await generateKeyPair();
 
 const jwt = new Jwt({
-  publicKey,
-  privateKey,
+	publicKey,
+	privateKey,
 });
 
 const token = jwt.sign({ userId: 456 }, { expiresIn: '24h' });
@@ -152,41 +149,41 @@ Here's a complete example combining multiple features:
 
 ```typescript
 import {
-  generateKeyPair,
-  Encryptor,
-  Decryptor,
-  hashPassword,
-  comparePassword,
-  Jwt,
+	generateKeyPair,
+	Encryptor,
+	Decryptor,
+	hashPassword,
+	comparePassword,
+	Jwt,
 } from '@riao/crypto';
 
 async function example() {
-  // 1. Generate key pair
-  const { publicKey, privateKey } = await generateKeyPair();
+	// 1. Generate key pair
+	const { publicKey, privateKey } = await generateKeyPair();
 
-  // 2. Encrypt a message
-  const encryptor = new Encryptor(publicKey);
-  const encrypted = encryptor.encrypt('confidential data');
-  console.log('Encrypted:', encrypted);
+	// 2. Encrypt a message
+	const encryptor = new Encryptor(publicKey);
+	const encrypted = encryptor.encrypt('confidential data');
+	console.log('Encrypted:', encrypted);
 
-  // 3. Decrypt the message
-  const decryptor = new Decryptor(privateKey);
-  const decrypted = decryptor.decrypt(encrypted);
-  console.log('Decrypted:', decrypted.toString());
+	// 3. Decrypt the message
+	const decryptor = new Decryptor(privateKey);
+	const decrypted = decryptor.decrypt(encrypted);
+	console.log('Decrypted:', decrypted.toString());
 
-  // 4. Hash a password
-  const hashedPassword = await hashPassword('userPassword');
-  const isPasswordValid = await comparePassword('userPassword', hashedPassword);
-  console.log('Password valid:', isPasswordValid);
+	// 4. Hash a password
+	const hashedPassword = await hashPassword('userPassword');
+	const isPasswordValid = await comparePassword('userPassword', hashedPassword);
+	console.log('Password valid:', isPasswordValid);
 
-  // 5. Create and verify JWT
-  const jwt = new Jwt({ publicKey, privateKey });
-  const token = jwt.sign(
-    { userId: 1, email: 'user@example.com' },
-    { expiresIn: '7d' }
-  );
-  const payload = jwt.verify(token);
-  console.log('JWT Payload:', payload);
+	// 5. Create and verify JWT
+	const jwt = new Jwt({ publicKey, privateKey });
+	const token = jwt.sign(
+		{ userId: 1, email: 'user@example.com' },
+		{ expiresIn: '7d' }
+	);
+	const payload = jwt.verify(token);
+	console.log('JWT Payload:', payload);
 }
 
 example().catch(console.error);

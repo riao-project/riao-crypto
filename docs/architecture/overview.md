@@ -33,20 +33,23 @@ src/
 **Purpose**: Provides RSA-based public-key encryption and decryption.
 
 **Key Components**:
+
 - `encrypt()` - Function to encrypt data with a public key
 - `decrypt()` - Function to decrypt data with a private key
 - `Encryptor` - Class wrapper for encryption operations
 - `Decryptor` - Class wrapper for decryption operations
 
 **Algorithm Details**:
+
 - Encryption: RSA with OAEP padding and SHA-256 hashing
 - Uses Node.js `crypto` module's `publicEncrypt()` and `privateDecrypt()` APIs
 
 **Data Flow**:
+
 ```
-Data (string/Buffer) 
-  → Convert to Buffer 
-  → Encrypt with public key (OAEP + SHA256) 
+Data (string/Buffer)
+  → Convert to Buffer
+  → Encrypt with public key (OAEP + SHA256)
   → Return encrypted Buffer
 ```
 
@@ -55,15 +58,18 @@ Data (string/Buffer)
 **Purpose**: Provides secure password hashing and verification using bcrypt.
 
 **Key Components**:
+
 - `Hash` class with configurable salt rounds
 - `make()` - Hash a password or string
 - `check()` - Verify a string against a hash
 
 **Configuration**:
+
 - Default rounds: 12 (configurable per operation)
 - Uses bcrypt library for secure hashing
 
 **Data Flow**:
+
 ```
 Password (string)
   → Generate salt (12 rounds by default)
@@ -76,26 +82,31 @@ Password (string)
 **Purpose**: Manages JSON Web Token creation, signing, and verification.
 
 **Key Components**:
+
 - `Jwt<TPayload>` - Generic class for JWT operations
 - `JwtOptions` - Configuration interface (supports Secret or KeyPair)
 - `JwtPayload` - Type alias for token payload
 - `Token` - Return type with token string
 
 **Supported Algorithms**:
+
 - **HS256, HS384, HS512**: HMAC with SHA (uses Secret)
 - **RS256, RS384, RS512**: RSA with SHA (uses KeyPair)
 - **ES256, ES384, ES512**: ECDSA with SHA (uses KeyPair)
 
 **Key Methods**:
+
 - `sign()` / `generateToken()` - Create and sign a JWT
 - `verify()` / `decodeToken()` - Verify and decode a JWT
 
 **Configuration Options**:
+
 - `expiresIn` - Token expiration time (default: '15m')
 - `notBefore` - Token not valid before time (default: '1s')
 - `algorithm` - Signing algorithm (auto-selected based on key type)
 
 **Data Flow**:
+
 ```
 Payload (object)
   → Select algorithm (HS512 for secret, ES512 for key pair)
@@ -113,20 +124,24 @@ Token (string)
 **Purpose**: Generates and manages RSA and ECDSA key pairs.
 
 **Key Components**:
+
 - `KeyPairGenerator` - Class for generating key pairs
 - `KeyPair` interface - Contains publicKey, privateKey, and algorithm
 - `KeyPairAlgorithm` - Type for supported algorithms
 
 **Supported Algorithms & Key Sizes**:
+
 - **RSA**: RS256 (2048-bit), RS384 (3072-bit), RS512 (4096-bit)
 - **ECDSA**: ES256 (prime256v1), ES384 (secp384r1), ES512 (secp521r1)
 
 **Key Methods**:
+
 - `generate()` - Generate a new key pair
 - `save()` - Save keys to files (PEM format)
 - `load()` - Load keys from files
 
 **Data Flow**:
+
 ```
 Algorithm selection (RS256 | ES256 | etc.)
   → Generate key pair with appropriate parameters
@@ -138,6 +153,7 @@ Algorithm selection (RS256 | ES256 | etc.)
 **Purpose**: Defines types for HMAC secret-based operations.
 
 **Key Components**:
+
 - `Secret` interface - Contains secret string and algorithm
 - `SecretAlgorithm` - Type for HS256, HS384, HS512
 
@@ -170,6 +186,7 @@ Secret Interface
 ## Interaction Patterns
 
 ### Pattern 1: Key Generation → Encryption
+
 ```typescript
 // 1. Generate keys
 const { publicKey, privateKey } = await generateKeyPair();
@@ -184,6 +201,7 @@ const decrypted = decryptor.decrypt(encrypted);
 ```
 
 ### Pattern 2: Key Generation → JWT Signing
+
 ```typescript
 // 1. Generate keys
 const { publicKey, privateKey } = await generateKeyPair();
@@ -197,6 +215,7 @@ const verified = jwt.verify(token);
 ```
 
 ### Pattern 3: Password Hashing Flow
+
 ```typescript
 // 1. Hash password on registration
 const hash = await hashPassword(password);
@@ -208,22 +227,26 @@ const isValid = await comparePassword(input, hash);
 ## Security Considerations
 
 ### Encryption Module
+
 - Uses RSA OAEP padding (optimal asymmetric encryption padding) for security against padding oracle attacks
 - Employs SHA-256 for OAEP hash function
 - Supports variable key sizes (2048, 3072, 4096 bits)
 
 ### Hashing Module
+
 - Uses bcrypt with 12 salt rounds by default
 - Automatically handles salt generation
 - Resistant to rainbow table and GPU attacks due to bcrypt's design
 
 ### JWT Module
+
 - Supports multiple secure algorithms (HMAC, RSA, ECDSA)
 - Enforces token expiration validation
 - Type-safe payload handling
 - Automatically selects appropriate algorithm based on key type
 
 ### KeyPair Module
+
 - Supports industry-standard key sizes:
   - RSA: 2048, 3072, 4096 bits
   - ECDSA: prime256v1, secp384r1, secp521r1
@@ -234,11 +257,11 @@ const isValid = await comparePassword(input, hash);
 The library exports all public functions and classes through `src/index.ts`:
 
 ```typescript
-export * from './crypto';      // Encryptor, Decryptor, encrypt, decrypt
-export * from './hash';        // Hash, hashPassword, comparePassword
-export * from './jwt';         // Jwt, JwtPayload, JwtOptions, Token
-export * from './keypair';     // KeyPairGenerator, generateKeyPair, KeyPair
-export * from './secret';      // Secret, SecretAlgorithm
+export * from './crypto'; // Encryptor, Decryptor, encrypt, decrypt
+export * from './hash'; // Hash, hashPassword, comparePassword
+export * from './jwt'; // Jwt, JwtPayload, JwtOptions, Token
+export * from './keypair'; // KeyPairGenerator, generateKeyPair, KeyPair
+export * from './secret'; // Secret, SecretAlgorithm
 ```
 
 See [Public Exports Guide](../contributing/public-exports.md) for detailed conventions.
@@ -264,11 +287,13 @@ test/
 ## Build & Distribution
 
 ### Build System
+
 - **Bundler**: Vite
 - **Output Formats**: ESM (.mjs) and CommonJS (.cjs)
 - **Type Declarations**: Generated automatically (.d.ts files)
 
 ### Package Configuration
+
 - Dual package export (ESM + CommonJS)
 - TypeScript declarations included
 - Node.js >= 22.0.0 required
