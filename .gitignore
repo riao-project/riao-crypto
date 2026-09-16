@@ -39,3 +39,6 @@ scratch/
 
 # remrg
 .remrg/cache
+
+# Test artifacts
+test/keys/
