@@ -51,6 +51,14 @@ export default defineConfig({
 		rollupOptions: {
 			// External dependencies that shouldn't be bundled
 			external: [
+				// Node.js built-ins
+				'crypto',
+				'buffer',
+				'fs',
+				'fs/promises',
+				'path',
+				'stream',
+				// Package dependencies
 				...Object.keys(pkg.dependencies || {}),
 				...Object.keys(pkg.peerDependencies || {}),
 			].map((dep) => new RegExp(`^${dep}(/.*)?$`)),
