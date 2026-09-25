@@ -52,7 +52,7 @@ export class Jwt<TPayload extends JwtPayload = JwtPayload> {
 	protected tokenOptions(): jwt.SignOptions {
 		return {
 			expiresIn: this.expiresIn ?? '15m',
-			notBefore: this.notBefore ?? '1s',
+			notBefore: this.notBefore ?? 0,
 			algorithm: this.algorithm,
 		};
 	}
