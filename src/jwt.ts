@@ -1,8 +1,8 @@
 import * as jwt from 'jsonwebtoken';
 import ms from 'ms';
 
-import { Secret, SecretAlgorithm } from './secret';
-import { KeyPair, KeyPairAlgorithm } from './keypair';
+import { Secret, SecretAlgorithm } from './secret.js';
+import { KeyPair, KeyPairAlgorithm } from './keypair.js';
 import { createSecretKey, KeyObject } from 'crypto';
 import { Buffer } from 'buffer';
 

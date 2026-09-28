@@ -6,8 +6,8 @@
  *  and package.json configuration.
  */
 
-export * from './crypto';
-export * from './hash';
-export * from './jwt';
-export * from './keypair';
-export * from './secret';
+export * from './crypto.js';
+export * from './hash.js';
+export * from './jwt.js';
+export * from './keypair.js';
+export * from './secret.js';
