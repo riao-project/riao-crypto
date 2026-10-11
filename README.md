@@ -52,10 +52,20 @@ const isMatch = await comparePassword('myPassword', hashed);
 ```typescript
 import { Jwt } from '@riao/crypto';
 
-const jwt = new Jwt({ secret: 'your-secret-key' });
-const token = jwt.sign({ userId: 123 }, { expiresIn: '1h' });
-const payload = jwt.verify(token);
+const jwt = new Jwt({ secret: 'your-secret-key', algorithm: 'HS256' });
+const { token } = await jwt.generateToken(
+	{ userId: 123 },
+	{ expiresIn: '1h', issuer: 'identity-service', audience: 'my-api' }
+);
+const payload = await jwt.decodeToken(token, {
+	issuer: 'identity-service',
+	audience: 'my-api',
+});
 ```
+
+Issuer and audience verification are optional. When configured, missing or
+mismatched claims reject verification. Omitting either option leaves that claim
+unrestricted; signature, algorithm, and time validation still apply.
 
 ### Key Pair Generation
 
