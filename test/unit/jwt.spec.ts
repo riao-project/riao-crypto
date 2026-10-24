@@ -1,8 +1,77 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Jwt } from '../../src/jwt';
+import { Jwt, isTokenValidationError } from '../../src/jwt';
 import { KeyPairGenerator } from '../../src/keypair';
+import { JsonWebTokenError } from 'jsonwebtoken';
+import { createHmac, createSecretKey } from 'node:crypto';
+import { Buffer } from 'node:buffer';
 
 describe('JWT', () => {
+	it('classifies malformed signed JSON as invalid credentials', async () => {
+		const secret = 'malformed-payload-test-secret';
+		const jwt = new Jwt({ secret, algorithm: 'HS256' });
+		const header = Buffer.from(
+			JSON.stringify({
+				alg: 'HS256',
+				typ: 'JWT',
+			})
+		).toString('base64url');
+		const payload = Buffer.from('not-json').toString('base64url');
+		const input = `${header}.${payload}`;
+		const signature = createHmac('sha256', secret)
+			.update(input)
+			.digest('base64url');
+		const error = await jwt.decodeToken(`${input}.${signature}`).then(
+			() => undefined,
+			(error: unknown) => error
+		);
+		expect(isTokenValidationError(error)).toBe(true);
+	});
+
+	it('preserves verifier key configuration failures', async () => {
+		const keys = new KeyPairGenerator({ algorithm: 'ES256' }).generate();
+		const issuer = new Jwt({ ...keys, algorithm: 'ES256' });
+		const token = await issuer.generateToken({ sub: 'user' });
+		const secret = createSecretKey(Buffer.from('not-an-asymmetric-key'));
+		const verifier = new Jwt({
+			privateKey: secret,
+			publicKey: secret,
+			algorithm: 'ES256',
+		});
+		const error = await verifier.decodeToken(token.token).then(
+			() => undefined,
+			(error: unknown) => error
+		);
+		expect(error).toBeInstanceOf(JsonWebTokenError);
+		expect(isTokenValidationError(error)).toBe(false);
+	});
+
+	it('classifies validation errors without hiding operational failures', async () => {
+		const jwt = new Jwt({
+			secret: 'validation-test-secret',
+			algorithm: 'HS256',
+		});
+		try {
+			await jwt.decodeToken('invalid');
+			throw new Error('Expected validation failure');
+		}
+		catch (error) {
+			expect(isTokenValidationError(error)).toBe(true);
+		}
+		expect(isTokenValidationError(new Error('Key service failed'))).toBe(false);
+		expect(isTokenValidationError({ name: 'JsonWebTokenError' })).toBe(false);
+		expect(
+			isTokenValidationError(
+				new JsonWebTokenError('secretOrPublicKey is not valid key material')
+			)
+		).toBe(false);
+		expect(
+			isTokenValidationError(
+				new JsonWebTokenError(
+					'error in secret or public key callback: Key service unavailable'
+				)
+			)
+		).toBe(false);
+	});
 	beforeEach(() => {
 		vi.useFakeTimers();
 	});
