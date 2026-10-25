@@ -27,6 +27,20 @@ describe('JWT', () => {
 		expect(isTokenValidationError(error)).toBe(true);
 	});
 
+	it('classifies malformed ES256 signatures as invalid credentials', async () => {
+		const keys = new KeyPairGenerator({ algorithm: 'ES256' }).generate();
+		const jwt = new Jwt({ ...keys, algorithm: 'ES256' });
+		const { token } = await jwt.generateToken({ sub: 'user' });
+		const malformedToken = `${token.split('.').slice(0, 2).join('.')}.AA`;
+		const error = await jwt.decodeToken(malformedToken).then(
+			() => undefined,
+			(error: unknown) => error
+		);
+
+		expect(error).toBeInstanceOf(JsonWebTokenError);
+		expect(isTokenValidationError(error)).toBe(true);
+	});
+
 	it('preserves verifier key configuration failures', async () => {
 		const keys = new KeyPairGenerator({ algorithm: 'ES256' }).generate();
 		const issuer = new Jwt({ ...keys, algorithm: 'ES256' });

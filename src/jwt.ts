@@ -121,6 +121,15 @@ export class Jwt<TPayload extends JwtPayload = JwtPayload> {
 			if (error instanceof SyntaxError) {
 				throw new jwt.JsonWebTokenError('invalid token', error);
 			}
+			if (
+				error instanceof TypeError &&
+				/^"ES(?:256|384|512)" signatures must be "\d+" bytes, saw "\d+"$/.test(
+					error.message
+				)
+			) {
+				throw new jwt.JsonWebTokenError('invalid signature', error);
+			}
+
 			throw error;
 		}
 
