@@ -57,11 +57,6 @@ const token = await jwt.generateToken({ userId: 123 }, { expiresIn: '1h' });
 const payload = await jwt.decodeToken(token.token);
 ```
 
-`decodeToken()` verifies the configured algorithm, signature, expiry,
-and not-before, then removes time claims from the returned payload.
-`isTokenValidationError(error)` recognizes JWT validation errors so authentication
-drivers can reject invalid credentials without swallowing operational failures.
-
 ### Key Pair Generation
 
 ```typescript
