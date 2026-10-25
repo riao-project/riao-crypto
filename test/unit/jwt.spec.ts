@@ -71,7 +71,57 @@ describe('JWT', () => {
 				)
 			)
 		).toBe(false);
+		const token = await jwt.generateToken(
+			{ sub: 'user' },
+			{ issuer: 'identity-service', audience: 'my-api' }
+		);
+		const claimError = await jwt
+			.decodeToken(token.token, {
+				issuer: 'other-service',
+			})
+			.then(
+				() => undefined,
+				(error: unknown) => error
+			);
+		expect(isTokenValidationError(claimError)).toBe(true);
 	});
+
+	it('verifies matching issuer and audience', async () => {
+		const jwt = new Jwt({ secret: 'claim-scoping-secret', algorithm: 'HS256' });
+		const { token } = await jwt.generateToken(
+			{ sub: 'user' },
+			{ issuer: 'identity-service', audience: 'my-api' }
+		);
+		await expect(
+			jwt.decodeToken(token, {
+				issuer: 'identity-service',
+				audience: 'my-api',
+			})
+		).resolves.toEqual({
+			sub: 'user',
+			iss: 'identity-service',
+			aud: 'my-api',
+		});
+		await expect(jwt.decodeToken(token)).resolves.toEqual({
+			sub: 'user',
+			iss: 'identity-service',
+			aud: 'my-api',
+		});
+	});
+
+	it('rejects missing and mismatched configured claims', async () => {
+		const jwt = new Jwt({ secret: 'claim-scoping-secret', algorithm: 'HS256' });
+		const absent = await jwt.generateToken({ sub: 'user' });
+		const present = await jwt.generateToken(
+			{ sub: 'user' },
+			{ issuer: 'identity-service', audience: 'my-api' }
+		);
+		for (const options of [{ issuer: 'other' }, { audience: 'other' }]) {
+			await expect(jwt.decodeToken(absent.token, options)).rejects.toThrow();
+			await expect(jwt.decodeToken(present.token, options)).rejects.toThrow();
+		}
+	});
+
 	beforeEach(() => {
 		vi.useFakeTimers();
 	});

@@ -8,6 +8,11 @@ import { Buffer } from 'buffer';
 
 export type JwtPayload = Record<string, unknown>;
 
+export interface JwtVerificationOptions {
+	issuer?: string;
+	audience?: string;
+}
+
 const tokenRejectionMessages = new Set([
 	'jwt must be provided',
 	'jwt must be a string',
@@ -99,10 +104,15 @@ export class Jwt<TPayload extends JwtPayload = JwtPayload> {
 		return { token };
 	}
 
-	public async decodeToken(token: string): Promise<TPayload> {
+	public async decodeToken(
+		token: string,
+		options: JwtVerificationOptions = {}
+	): Promise<TPayload> {
 		let result: string | jwt.JwtPayload;
 		try {
 			result = jwt.verify(token, this.publicKey, {
+				issuer: options.issuer,
+				audience: options.audience,
 				algorithms: [this.algorithm as jwt.Algorithm],
 			});
 		}
