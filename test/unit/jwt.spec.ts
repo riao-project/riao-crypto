@@ -45,6 +45,46 @@ describe('JWT', () => {
 		expect(isTokenValidationError(error)).toBe(false);
 	});
 
+	it.each([
+		{
+			message: 'invalid signature',
+			secret: 'wrong-secret',
+			expiresIn: 3600,
+			notBefore: 0,
+		},
+		{
+			message: 'jwt expired',
+			secret: 'classification-secret',
+			expiresIn: -1,
+			notBefore: 0,
+		},
+		{
+			message: 'jwt not active',
+			secret: 'classification-secret',
+			expiresIn: 3600,
+			notBefore: 60,
+		},
+	])(
+		'classifies $message as a token rejection',
+		async ({ message, secret, expiresIn, notBefore }) => {
+			const issuer = new Jwt({
+				secret: 'classification-secret',
+				algorithm: 'HS256',
+			});
+			const verifier = new Jwt({ secret, algorithm: 'HS256' });
+			const { token } = await issuer.generateToken(
+				{ sub: 'user' },
+				{ expiresIn, notBefore }
+			);
+			const error = await verifier.decodeToken(token).then(
+				() => undefined,
+				(error: unknown) => error
+			);
+			expect(error).toHaveProperty('message', message);
+			expect(isTokenValidationError(error)).toBe(true);
+		}
+	);
+
 	it('classifies validation errors without hiding operational failures', async () => {
 		const jwt = new Jwt({
 			secret: 'validation-test-secret',
