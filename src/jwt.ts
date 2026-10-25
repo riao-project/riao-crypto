@@ -13,6 +13,34 @@ export interface JwtVerificationOptions {
 	audience?: string;
 }
 
+const tokenRejectionMessages = new Set([
+	'jwt must be provided',
+	'jwt must be a string',
+	'jwt malformed',
+	'invalid token',
+	'jwt signature is required',
+	'invalid algorithm',
+	'invalid signature',
+	'invalid nbf value',
+	'invalid exp value',
+	'Invalid token: payload is a string',
+]);
+
+export function isTokenValidationError(error: unknown): boolean {
+	if (
+		error instanceof jwt.TokenExpiredError ||
+		error instanceof jwt.NotBeforeError
+	) {
+		return true;
+	}
+	// jsonwebtoken also uses JsonWebTokenError for key/configuration failures.
+	return (
+		error instanceof jwt.JsonWebTokenError &&
+		(tokenRejectionMessages.has(error.message) ||
+			/^jwt (audience|issuer) invalid\. expected: /.test(error.message))
+	);
+}
+
 export type JwtSigningOptions = Secret | KeyPair;
 
 export type JwtOptions = JwtSigningOptions & {
@@ -80,14 +108,33 @@ export class Jwt<TPayload extends JwtPayload = JwtPayload> {
 		token: string,
 		options: JwtVerificationOptions = {}
 	): Promise<TPayload> {
-		const result = await jwt.verify(token, this.publicKey, {
-			issuer: options.issuer,
-			audience: options.audience,
-			algorithms: [this.algorithm as jwt.Algorithm],
-		});
+		let result: string | jwt.JwtPayload;
+		try {
+			result = jwt.verify(token, this.publicKey, {
+				issuer: options.issuer,
+				audience: options.audience,
+				algorithms: [this.algorithm as jwt.Algorithm],
+			});
+		}
+		catch (error) {
+			// jws exposes malformed JWT JSON as a parser error, not a JWT error.
+			if (error instanceof SyntaxError) {
+				throw new jwt.JsonWebTokenError('invalid token', error);
+			}
+			if (
+				error instanceof TypeError &&
+				/^"ES(?:256|384|512)" signatures must be "\d+" bytes, saw "\d+"$/.test(
+					error.message
+				)
+			) {
+				throw new jwt.JsonWebTokenError('invalid signature', error);
+			}
+
+			throw error;
+		}
 
 		if (typeof result === 'string') {
-			throw new Error('Invalid token: payload is a string');
+			throw new jwt.JsonWebTokenError('Invalid token: payload is a string');
 		}
 
 		delete result['iat'];

@@ -1,8 +1,145 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Jwt } from '../../src/jwt';
+import { Jwt, isTokenValidationError } from '../../src/jwt';
 import { KeyPairGenerator } from '../../src/keypair';
+import { JsonWebTokenError } from 'jsonwebtoken';
+import { createHmac, createSecretKey } from 'node:crypto';
+import { Buffer } from 'node:buffer';
 
 describe('JWT', () => {
+	it('classifies malformed signed JSON as invalid credentials', async () => {
+		const secret = 'malformed-payload-test-secret';
+		const jwt = new Jwt({ secret, algorithm: 'HS256' });
+		const header = Buffer.from(
+			JSON.stringify({
+				alg: 'HS256',
+				typ: 'JWT',
+			})
+		).toString('base64url');
+		const payload = Buffer.from('not-json').toString('base64url');
+		const input = `${header}.${payload}`;
+		const signature = createHmac('sha256', secret)
+			.update(input)
+			.digest('base64url');
+		const error = await jwt.decodeToken(`${input}.${signature}`).then(
+			() => undefined,
+			(error: unknown) => error
+		);
+		expect(isTokenValidationError(error)).toBe(true);
+	});
+
+	it('classifies malformed ES256 signatures as invalid credentials', async () => {
+		const keys = new KeyPairGenerator({ algorithm: 'ES256' }).generate();
+		const jwt = new Jwt({ ...keys, algorithm: 'ES256' });
+		const { token } = await jwt.generateToken({ sub: 'user' });
+		const malformedToken = `${token.split('.').slice(0, 2).join('.')}.AA`;
+		const error = await jwt.decodeToken(malformedToken).then(
+			() => undefined,
+			(error: unknown) => error
+		);
+
+		expect(error).toBeInstanceOf(JsonWebTokenError);
+		expect(isTokenValidationError(error)).toBe(true);
+	});
+
+	it('preserves verifier key configuration failures', async () => {
+		const keys = new KeyPairGenerator({ algorithm: 'ES256' }).generate();
+		const issuer = new Jwt({ ...keys, algorithm: 'ES256' });
+		const token = await issuer.generateToken({ sub: 'user' });
+		const secret = createSecretKey(Buffer.from('not-an-asymmetric-key'));
+		const verifier = new Jwt({
+			privateKey: secret,
+			publicKey: secret,
+			algorithm: 'ES256',
+		});
+		const error = await verifier.decodeToken(token.token).then(
+			() => undefined,
+			(error: unknown) => error
+		);
+		expect(error).toBeInstanceOf(JsonWebTokenError);
+		expect(isTokenValidationError(error)).toBe(false);
+	});
+
+	it.each([
+		{
+			message: 'invalid signature',
+			secret: 'wrong-secret',
+			expiresIn: 3600,
+			notBefore: 0,
+		},
+		{
+			message: 'jwt expired',
+			secret: 'classification-secret',
+			expiresIn: -1,
+			notBefore: 0,
+		},
+		{
+			message: 'jwt not active',
+			secret: 'classification-secret',
+			expiresIn: 3600,
+			notBefore: 60,
+		},
+	])(
+		'classifies $message as a token rejection',
+		async ({ message, secret, expiresIn, notBefore }) => {
+			const issuer = new Jwt({
+				secret: 'classification-secret',
+				algorithm: 'HS256',
+			});
+			const verifier = new Jwt({ secret, algorithm: 'HS256' });
+			const { token } = await issuer.generateToken(
+				{ sub: 'user' },
+				{ expiresIn, notBefore }
+			);
+			const error = await verifier.decodeToken(token).then(
+				() => undefined,
+				(error: unknown) => error
+			);
+			expect(error).toHaveProperty('message', message);
+			expect(isTokenValidationError(error)).toBe(true);
+		}
+	);
+
+	it('classifies validation errors without hiding operational failures', async () => {
+		const jwt = new Jwt({
+			secret: 'validation-test-secret',
+			algorithm: 'HS256',
+		});
+		try {
+			await jwt.decodeToken('invalid');
+			throw new Error('Expected validation failure');
+		}
+		catch (error) {
+			expect(isTokenValidationError(error)).toBe(true);
+		}
+		expect(isTokenValidationError(new Error('Key service failed'))).toBe(false);
+		expect(isTokenValidationError({ name: 'JsonWebTokenError' })).toBe(false);
+		expect(
+			isTokenValidationError(
+				new JsonWebTokenError('secretOrPublicKey is not valid key material')
+			)
+		).toBe(false);
+		expect(
+			isTokenValidationError(
+				new JsonWebTokenError(
+					'error in secret or public key callback: Key service unavailable'
+				)
+			)
+		).toBe(false);
+		const token = await jwt.generateToken(
+			{ sub: 'user' },
+			{ issuer: 'identity-service', audience: 'my-api' }
+		);
+		const claimError = await jwt
+			.decodeToken(token.token, {
+				issuer: 'other-service',
+			})
+			.then(
+				() => undefined,
+				(error: unknown) => error
+			);
+		expect(isTokenValidationError(claimError)).toBe(true);
+	});
+
 	it('verifies matching issuer and audience', async () => {
 		const jwt = new Jwt({ secret: 'claim-scoping-secret', algorithm: 'HS256' });
 		const { token } = await jwt.generateToken(

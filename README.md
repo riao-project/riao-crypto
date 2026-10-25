@@ -50,13 +50,22 @@ const isMatch = await comparePassword('myPassword', hashed);
 ### JWT
 
 ```typescript
-import { Jwt } from '@riao/crypto';
+import { Jwt, isTokenValidationError } from '@riao/crypto';
 
-const jwt = new Jwt({ secret: 'your-secret-key', algorithm: 'HS256' });
+const jwt = new Jwt({
+	secret: 'your-secret-key',
+	algorithm: 'HS256',
+});
+
 const { token } = await jwt.generateToken(
 	{ userId: 123 },
-	{ expiresIn: '1h', issuer: 'identity-service', audience: 'my-api' }
+	{
+		expiresIn: '1h',
+		issuer: 'identity-service',
+		audience: 'my-api',
+	}
 );
+
 const payload = await jwt.decodeToken(token, {
 	issuer: 'identity-service',
 	audience: 'my-api',
@@ -64,6 +73,8 @@ const payload = await jwt.decodeToken(token, {
 ```
 
 Issuer and audience verification are optional. When configured, missing or mismatched claims reject verification. Omitting either option leaves that claim unrestricted, but signature, algorithm, and time validation still apply.
+
+Use `isTokenValidationError(error)` to distinguish expected invalid-token rejections from operational or key-configuration failures.
 
 ### Key Pair Generation
 
