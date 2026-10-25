@@ -63,9 +63,7 @@ const payload = await jwt.decodeToken(token, {
 });
 ```
 
-Issuer and audience verification are optional. When configured, missing or
-mismatched claims reject verification. Omitting either option leaves that claim
-unrestricted; signature, algorithm, and time validation still apply.
+Issuer and audience verification are optional. When configured, missing or mismatched claims reject verification. Omitting either option leaves that claim unrestricted, but signature, algorithm, and time validation still apply.
 
 ### Key Pair Generation
 
