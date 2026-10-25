@@ -81,7 +81,8 @@ export class Jwt<TPayload extends JwtPayload = JwtPayload> {
 		options: JwtVerificationOptions = {}
 	): Promise<TPayload> {
 		const result = await jwt.verify(token, this.publicKey, {
-			...options,
+			issuer: options.issuer,
+			audience: options.audience,
 			algorithms: [this.algorithm as jwt.Algorithm],
 		});
 
