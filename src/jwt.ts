@@ -8,6 +8,11 @@ import { Buffer } from 'buffer';
 
 export type JwtPayload = Record<string, unknown>;
 
+export interface JwtVerificationOptions {
+	issuer?: string;
+	audience?: string;
+}
+
 export type JwtSigningOptions = Secret | KeyPair;
 
 export type JwtOptions = JwtSigningOptions & {
@@ -71,8 +76,13 @@ export class Jwt<TPayload extends JwtPayload = JwtPayload> {
 		return { token };
 	}
 
-	public async decodeToken(token: string): Promise<TPayload> {
+	public async decodeToken(
+		token: string,
+		options: JwtVerificationOptions = {}
+	): Promise<TPayload> {
 		const result = await jwt.verify(token, this.publicKey, {
+			issuer: options.issuer,
+			audience: options.audience,
 			algorithms: [this.algorithm as jwt.Algorithm],
 		});
 
